@@ -1,6 +1,7 @@
 This is a simple console application for RSA encryption and decryption in C#.
 
 How to use
+
 Generate public and private keys: Run the program and select option 1. Follow the prompts to generate a public key and a private key.
 
 Encrypt a message: Select option 2 and enter the message you want to encrypt and public key. The program will use the public key to encrypt the message and display the encrypted message on the console.
