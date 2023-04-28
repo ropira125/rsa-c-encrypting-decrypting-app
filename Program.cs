@@ -1,74 +1,75 @@
-﻿using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-
-bool isOpen = true;
-
-while (isOpen)
+﻿public static class Program
 {
-
-    Console.WriteLine("Choose an option:");
-    Console.WriteLine("1. Generate RSA keys");
-    Console.WriteLine("2. Encrypt message");
-    Console.WriteLine("3. Decrypt message");
-    Console.WriteLine("4. Close the program");
-    Console.Write("Option: ");
-    int mode = int.Parse(Console.ReadLine());
-
-    if (mode == 1)
+    private static RSATextEncriptor encriptor = new();
+    private static Dictionary<string, Action<string>> _commandsCodes = new()
     {
-        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-        string publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
-        string privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
+        {"genkeys", GenerateKeys},
+        {"showkeys", ShowKeys },
+        {"enc", EncryptText},
+        {"dec", DecryptText},
+    };
+    private static int minCommandLength = 3;
+    private static bool _isOpened = true;
 
-        Console.WriteLine("Public Key: " + publicKey);
-        Console.WriteLine("Private Key: " + privateKey);
-    }
-    else if (mode == 2)
+    private static void Main(string[] args)
     {
-        Console.Write("Enter message to encrypt: ");
-        string message = Console.ReadLine();
-        Console.Write("Enter public key: ");
-        string publicKeyString = Console.ReadLine();
-
-        byte[] data = Encoding.UTF8.GetBytes(message);
-        byte[] encryptedData = Encrypt(data, Convert.FromBase64String(publicKeyString));
-        string encryptedMessage = Convert.ToBase64String(encryptedData);
-
-        Console.WriteLine("Encrypted message: " + encryptedMessage);
+        Console.WriteLine("rsa-encrypting-decrypting-app v0.0.1 by ropira125, modified version by Kandellyabr717");
+        while (_isOpened)
+        {
+            var expression = Console.ReadLine() ?? "";
+            try
+            {
+                (var argument, var command) = ParseExpression(expression);
+                command.Invoke(argument);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Invalid command");
+            }
+        }
     }
-    else if (mode == 3)
+
+    private static (string argument, Action<string> command) ParseExpression(string expression)
     {
-        Console.Write("Enter message to decrypt: ");
-        string encryptedMessage = Console.ReadLine();
-        Console.Write("Enter private key: ");
-        string privateKeyString = Console.ReadLine();
-
-        byte[] decryptedData = Decrypt(Convert.FromBase64String(encryptedMessage), Convert.FromBase64String(privateKeyString));
-        string decryptedMessage = Encoding.UTF8.GetString(decryptedData);
-
-        Console.WriteLine("Decrypted message: " + decryptedMessage);
+        if (expression.Length < minCommandLength)
+        {
+            throw new ArgumentException();
+        }
+        var border = expression.IndexOf(' ');
+        string argument;
+        Action<string> command;
+        if (border == -1)
+        {
+            argument = "";
+            command = _commandsCodes[expression[0..^0]];
+        }
+        else
+        {
+            argument = expression[(border + 1)..^0];
+            command = _commandsCodes[expression[0..border]];
+        }
+        return (argument, command);
     }
-    else if (mode == 4)
+
+    private static void GenerateKeys(string blank)
     {
-        isOpen = false;
+        encriptor.GenrateKeys();
     }
-    else
-    {
-        Console.WriteLine("Invalid option selected.");
-    }
-}
-byte[] Encrypt(byte[] data, byte[] publicKey)
-{
-    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-    rsa.ImportRSAPublicKey(publicKey, out int bytesRead);
-    return rsa.Encrypt(data, false);
-}
 
-byte[] Decrypt(byte[] data, byte[] privateKey)
-{
-    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-    rsa.ImportRSAPrivateKey(privateKey, out int bytesRead);
-    return rsa.Decrypt(data, false);
+    private static void ShowKeys(string blank)
+    {
+        Console.WriteLine(encriptor.KeyPair);
+    }
+
+    private static void EncryptText(string text)
+    {
+        var enctripted = encriptor.EncryptText(text);
+        Console.WriteLine("Encrypted Text:\n\n" + enctripted + "\n");
+    }
+
+    private static void DecryptText(string text)
+    {
+        var dectripted = encriptor.DecryptText(text);
+        Console.WriteLine("Decrypted Text:\n\n" + dectripted + "\n");
+    }
 }
